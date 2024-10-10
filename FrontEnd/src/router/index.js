@@ -1,9 +1,11 @@
 import { createRouter, createWebHistory } from "vue-router";
-import Update from "../views/Update.vue";
-import AddUser from "../views/AddUser.vue";
-import Signup from "../views/signup.vue";
-import Login from "../views/Login.vue";
-import UserManagement from "../components/UserManagement.vue";
+
+import Update from "../views/Update/update.vue";
+import AddUser from "../views/ADDuser/create.vue";
+import Signup from "../views/SignUP/signup.vue";
+import Login from "../views/Login/login.vue";
+import users from "../views/Users/users.vue";
+import Home from "../views/Home.vue";
 
 const routes = [
   { path: "/login", name: "login", component: Login },
@@ -11,10 +13,11 @@ const routes = [
   { path: "/update/:id", name: "Update", component: Update },
   { path: "/create", name: "AddUser", component: AddUser },
   { path: "/signup", name: "signup", component: Signup },
+  { path: "/home", name: "Home", component: Home },
   {
-    path: "/user-management",
-    name: "UserManagement",
-    component: UserManagement,
+    path: "/users",
+    name: "users",
+    component: users,
   },
 
   // other routes

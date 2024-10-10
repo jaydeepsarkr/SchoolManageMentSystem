@@ -2,7 +2,6 @@ let express = require("express");
 const cors = require("cors");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const cookieParser = require("cookie-parser");
 const { User, validateUser } = require("../BackEnd/mongoDB/users");
 const {
   LoginSignup,
@@ -15,12 +14,12 @@ let app = express();
 
 app.use(express.json());
 app.use(cors());
-app.use(cookieParser());
 
 const jwtSecretKey = "Acer Aspire 7";
 
+// Authorization middleware using headers
 const auth = (req, res, next) => {
-  const token = req.cookies["x-auth-token"]; // Get token from cookies
+  const token = req.header("Authorization"); // Get token from headers
   if (!token) return res.status(401).send("Access denied. No token provided.");
 
   try {
@@ -45,7 +44,6 @@ app.post("/signup", async (req, res) => {
     // Hash the password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(req.body.password, salt);
-    console.log(salt);
 
     // Save the user with hashed password
     let newUser = new LoginSignup({
@@ -62,14 +60,8 @@ app.post("/signup", async (req, res) => {
       { expiresIn: "1h" }
     );
 
-    // Save the token in a cookie
-    res
-      .cookie("x-auth-token", token, {
-        httpOnly: true,
-        secure: true,
-        maxAge: 3600000,
-      })
-      .send({ message: "Signup successful", result });
+    // Send the token in the response body
+    res.send({ message: "Signup successful", token });
   } catch (err) {
     res.status(500).send("Error signing up the user");
     console.log(err);
@@ -100,14 +92,8 @@ app.post("/login", async (req, res) => {
       expiresIn: "1h",
     });
 
-    // Save the token in a cookie
-    res
-      .cookie("x-auth-token", token, {
-        httpOnly: true,
-        secure: true,
-        maxAge: 3600000,
-      }) // Secure token cookie
-      .send({ message: "Login successful", token });
+    // Send the token in the response body
+    res.send({ message: "Login successful", token });
   } catch (err) {
     res.status(500).send("Error logging in the user");
     console.log(err);
@@ -123,7 +109,6 @@ app.post("/create", auth, async (req, res) => {
     let data = new User(req.body);
     let result = await data.save();
     res.send(result);
-    console.log(data);
   } catch (err) {
     res.status(500).send("Error saving user to the database");
     console.log(err);
@@ -141,11 +126,50 @@ app.get("/users", auth, async (req, res) => {
   }
 });
 
+// DELETE API to remove a user (protected)
+// DELETE API to remove a user (protected)
+app.delete("/users/:id", auth, async (req, res) => {
+  try {
+    // Find the user by ID and delete it
+    const user = await User.findByIdAndDelete(req.params.id); // Use findByIdAndDelete
+
+    if (!user)
+      return res.status(404).send("User with the given ID was not found.");
+
+    res.send({ message: "User deleted successfully", user });
+  } catch (err) {
+    res.status(500).send("Error deleting user from the database");
+    console.log(err);
+  }
+});
+
+// PUT API to update a user (protected)
+app.put("/edit/:id", auth, async (req, res) => {
+  const { error } = validateUser(req.body); // Validate user data
+  if (error) return res.status(400).send(error.details[0].message);
+
+  try {
+    // Find the user by ID and update it
+    const user = await User.findByIdAndUpdate(req.params.id, req.body, {
+      new: true, // Return the updated document
+      runValidators: true, // Run validators on the update
+    });
+
+    if (!user)
+      return res.status(404).send("User with the given ID was not found.");
+
+    res.send({ message: "User updated successfully", user });
+  } catch (err) {
+    res.status(500).send("Error updating user in the database");
+    console.log(err);
+  }
+});
+
 // Start the server
-app.listen(3000, (err) => {
+app.listen(8080, (err) => {
   if (err) {
     console.log(err);
   } else {
-    console.log("Server is running on port 3000");
+    console.log("Server is running on port 8080");
   }
 });
